@@ -130,7 +130,6 @@ function base_error_check()
 
 	if( $_POST['admin'] != $admin_pass )
 	{
-	echo $_POST['admin'].'/'.$admin_pass;
 		echo '管理パスエラーです。';
 		return false;
 	}
