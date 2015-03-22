@@ -21,8 +21,10 @@ $upload_result_code = "";	//リザルトのコード success=成功 failed=失敗
 
  main();
  
- echo '<!--result: '.$upload_result.'-->';
- echo '<!--resultcode: '.$upload_result_code.'-->';
+echo '<!--result: '.$upload_result.'-->';
+echo '<!--resultcode: '.$upload_result_code.'-->';
+ 
+echo '<br><a href="index.html">戻る</a>';
  
   ?>
 </p>
@@ -123,8 +125,13 @@ function main(){
 				
 	}
 
-	echo '<br><a href="index.html">戻る</a>';
+	
 
+}
+
+function out($str)
+{
+	echo htmlspecialchars($str, ENT_HTML401, 'SJIS' );
 }
 
 function set_result( $result_string, $result_code )
@@ -132,7 +139,7 @@ function set_result( $result_string, $result_code )
 	global $upload_result, $upload_result_code;
 	$upload_result = $result_string;
 	$upload_result_code = $result_code;
-	echo $result_string;
+	out( $result_string);
 }
 
 //基本エラーチェック
@@ -168,7 +175,6 @@ function base_error_check()
 	}
 	
 	if( strlen($_POST['id']) < 2 || strlen($_POST['password']) < 2){
-		echo "ID・パスワードは２文字以上は入力してください。";
 		set_result( 'ID・パスワードは２文字以上入力してください。', 'failed' );
 		return false;
 	}
@@ -219,12 +225,10 @@ function unzip( $zip_path, $dir_path )
 		for ($i = 0; $i < $zip->numFiles; $i++) { // $zip->numFiles はファイル数
 			$name = $zip->getNameIndex($i);
 			$destName = str_replace( '\\', '/', $name);
-			//$zip->renameName($name, $destName);
 			
 			$path_parts = pathinfo($dir_path.$destName);
 			$path = $path_parts['dirname'] . '/';
 			mkdir($path, 0777, true );
-			//echo  $path.'<br>';
 			
 			touch($dir_path.$destName);
 			chmod($dir_path.$destName, 0206);
@@ -232,7 +236,6 @@ function unzip( $zip_path, $dir_path )
 			fwrite( $fp, $zip->getFromName($name));
 			fclose($fp);
 		}
-		//$zip->extractTo( $dir_path);
 		$zip->close();
 	}
 	else{
