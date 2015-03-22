@@ -6,6 +6,8 @@
 <body>
 <p>
 <?php
+
+//設定です
 $id_pass_limit = 20;
 $admin_pass = 'kanadesan';
 $pass_dir = "pass/";
@@ -13,7 +15,14 @@ $data_dir = "data/";
 $nar_dir = "nar/";
 $file_size_limit = 1024 * 1024 * 5;
 
- main()
+//リザルト取得用
+$upload_result = "";		//リザルトの説明
+$upload_result_code = "";	//リザルトのコード success=成功 failed=失敗
+
+ main();
+ 
+ echo '<!--result: '.$upload_result.'-->';
+ echo '<!--resultcode: '.$upload_result_code.'-->';
  
   ?>
 </p>
@@ -48,21 +57,21 @@ function main(){
 		$passFile = $pass_dir.$id.'.txt';
 		if( file_exists($passFile) ){
 			//登録済み
-			echo $id.'　既に使用されているIDです。使用することは出来ません。';
+			set_result( $id.'　既に使用されているIDです。使用することは出来ません。', 'failed' );
 			return;
 		}
 		//登録をおこなう
 		touch( $passFile);
 		chmod( $passFile, 0600);	//外から見られないためのパーミッション
 		file_put_contents ( $passFile, $pass );	//カキコミ
-		echo $id.'　登録しました。';
+		set_result( $id.'　登録しました。', 'success' );
 	}
 	else if( $_POST['formtype'] == 'upload'){
 		//アップロード モード
 		if (is_uploaded_file($_FILES["upfile"]["tmp_name"])) {
 			try {
 				if( filesize() > $file_size_limit ){
-					echo 'ファイルサイズが大きすぎます。';
+					set_result( 'ファイルサイズが大きすぎます。', 'failed' );
 					return;
 				}
 			
@@ -72,7 +81,7 @@ function main(){
 				}
 				
 				if(!iszip($_FILES["upfile"]["tmp_name"])){
-					echo "ファイルの形式がnar/zipではありません。";
+					set_result( 'ファイルの形式がnar/zipではありません。', 'failed' );
 					return;
 				}
 				
@@ -87,14 +96,14 @@ function main(){
 				unzip( $_FILES["upfile"]["tmp_name"], $data_dir.$id."/");
 				move_uploaded_file($_FILES["upfile"]["tmp_name"], $nar_dir.$id.'.nar');
 				chmod($nar_dir.$id.'.nar', 0206);
-				echo "アップロード完了！";
+				set_result( 'アップロードが完了しました。', 'success' );
 				}
 			catch (Exception $e) {
-				    echo 'エラー: ',  $e->getMessage(), "\n";
+				set_result( 'エラー: ',  $e->getMessage(), 'failed' );
 			}
 		}
 		else {
-			echo "ファイルが選択されていません。";
+			set_result( 'ファイルが選択されていません。', 'failed' );
 		}	
 	}
 	else if( $_POST['formtype'] == 'delete' ){
@@ -110,11 +119,20 @@ function main(){
 				
 				unlink( $pass_dir.$id.".txt");
 				unlink( $nar_dir.$id.".nar");
-				echo "削除しました。";
+				set_result( $id.'　削除しました。', 'success' );
+				
 	}
 
 	echo '<br><a href="index.html">戻る</a>';
 
+}
+
+function set_result( $result_string, $result_code )
+{
+	global $upload_result, $upload_result_code;
+	$upload_result = $result_string;
+	$upload_result_code = $result_code;
+	echo $result_string;
 }
 
 //基本エラーチェック
@@ -124,33 +142,34 @@ function base_error_check()
 	global $id_pass_limit, $admin_pass, $pass_dir, $data_dir, $nar_dir, $file_size_limit;	
 
 	if( !isset( $_POST['formtype'] ) ){
-		echo "フォーム エラーです。";
+		set_result( 'フォーム エラーです。', 'failed' );
 		return false;
 	}
 
 	if( $_POST['admin'] != $admin_pass )
 	{
-		echo '管理パスエラーです。';
+		set_result( '管理パスが正しくありません。', 'failed' );
 		return false;
 	}
 
 	if( !isset($_POST['id']) || !isset($_POST['password']) ){
-		echo "ID・パスワードが入力されていません。";
+		set_result( 'ID・パスワードが入力されていません。', 'failed' );
 		return false;
 	}
 
 	if( strlen($_POST['id']) > $id_pass_limit || strlen($_POST['password']) > $id_pass_limit){
-		echo "ID・パスワードは".$id_pass_limit."文字までです。";
+		set_result( "ID・パスワードは".$id_pass_limit."文字までです。", 'failed' );
 		return false;
 	}
 	
 	if( strlen($_POST['id']) < 2 || strlen($_POST['password']) < 2){
 		echo "ID・パスワードは２文字以上は入力してください。";
+		set_result( 'ID・パスワードは２文字以上入力してください。', 'failed' );
 		return false;
 	}
 
 	if( !ctype_alnum($_POST['id'])  || !ctype_alnum($_POST['password']) ){
-		echo "ID・パスワードには英数字のみが使用できます。";
+		set_result( 'ID・パスワードには英数字のみが使用できます。', 'failed' );
 		return false;
 	}
 	return true;
@@ -162,7 +181,7 @@ function id_pass_check( $id, $pass )
 	
 	//パスワード照合処理
 	if (! ($fp = fopen (  $pass_dir.$id.".txt", "r" ))) {
-		echo "IDが登録されていません。";
+		set_result( 'IDが登録されていません。', 'failed' );
 		return false;
 	}
 	//パスワードを得る
@@ -170,7 +189,7 @@ function id_pass_check( $id, $pass )
 	fclose($fp);
 	if( $pass != $savedPass ){
 		//パスワード照合エラー
-		echo "IDとパスワードの組み合わせが正しくありません。";
+		set_result( 'IDとパスワードの組み合わせが正しくありません。', 'failed' );
 		return false;
 	}
 	
