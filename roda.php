@@ -141,6 +141,11 @@ function base_error_check()
 
 	global $id_pass_limit, $admin_pass, $pass_dir, $data_dir, $nar_dir, $file_size_limit;	
 
+	if( !ctype_alnum($_POST['id'])  || !ctype_alnum($_POST['password']) || !ctype_alnum($_POST['formtype']) || !ctype_alnum($_POST['admin'])  ){
+		set_result( '入力には英数字のみが使用できます。', 'failed' );
+		return false;
+	}
+
 	if( !isset( $_POST['formtype'] ) ){
 		set_result( 'フォーム エラーです。', 'failed' );
 		return false;
@@ -168,10 +173,7 @@ function base_error_check()
 		return false;
 	}
 
-	if( !ctype_alnum($_POST['id'])  || !ctype_alnum($_POST['password']) ){
-		set_result( 'ID・パスワードには英数字のみが使用できます。', 'failed' );
-		return false;
-	}
+	
 	return true;
 }
 
